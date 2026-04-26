@@ -215,16 +215,6 @@ export default function TransactionsScreen() {
     >
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Header */}
-      <View
-        className={`px-5 pt-4 pb-4 border-b ${isDark ? "border-[#2f2e43]" : "border-[#e2e0fc]"}`}
-      >
-        <Text
-          className={`text-2xl font-headline font-bold ${isDark ? "text-[#f2efff]" : "text-[#1a1a2e]"}`}
-        >
-          Transactions
-        </Text>
-      </View>
 
       {/* Summary Cards */}
       <View className="px-5 py-4 flex-row gap-3">
@@ -343,8 +333,8 @@ export default function TransactionsScreen() {
         data={filteredTransactions}
         renderItem={renderTransactionItem}
         keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+        scrollEnabled={true}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
       />
 
       {/* Empty State */}

@@ -87,9 +87,23 @@ export default function StartUnderstandingScreen() {
       withSpring(0.96),
       withSpring(1)
     );
-    console.log('Start tracking manually');
+    /**
+     * TODO: API Integration
+     * After onboarding finishes, you may want to:
+     * 1. Send user preferences to backend
+     * 2. Create initial user profile
+     * 
+     * await fetch('YOUR_API_URL/onboarding/complete', {
+     *   method: 'POST',
+     *   headers: { 'Content-Type': 'application/json' },
+     *   body: JSON.stringify({
+     *     preferences: { ... }
+     *   })
+     * });
+     */
     dispatch(setHasOnboarded(true));
-    router.replace("/login")
+    // Navigation will be handled by root layout useEffect
+    // which will redirect to auth/login when hasOnboarded is true but no token
   };
 
   const handleConnectLater = () => {
@@ -97,9 +111,10 @@ export default function StartUnderstandingScreen() {
       withSpring(0.96),
       withSpring(1)
     );
-    console.log('Connect later');
-    // Navigate to main dashboard
+    // Skip for now and proceed to login
+    dispatch(setHasOnboarded(true));
   };
+    // Navigate to main dashboard
 
   // Animated styles
   const mainContainerStyle = useAnimatedStyle(() => ({

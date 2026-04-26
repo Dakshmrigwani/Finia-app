@@ -7,11 +7,15 @@ import {
   TouchableOpacity,
   useColorScheme,
   Switch,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../store/Slices/authSlice";
+import { RootState } from "../../store";
 
 type SettingItem = {
   id: string;
@@ -31,6 +35,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const [settings, setSettings] = useState({
     notifications: true,
@@ -39,18 +45,47 @@ export default function ProfileScreen() {
     twoFactor: false,
   });
 
-  // Mock user data
+  // Mock user data (fallback if not from API)
   const userData = {
-    name: "Daksh Kumar",
-    email: "daksh@example.com",
+    name: user?.name || "Daksh Kumar",
+    email: user?.email || "daksh@example.com",
     phone: "+1 (555) 123-4567",
     memberSince: "January 2024",
     accountStatus: "Active",
   };
 
   const handleLogout = () => {
-    console.log("Logging out...");
-    router.replace("/(auth)/login");
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        onPress: () => {},
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        onPress: () => {
+          /**
+           * TODO: API Integration
+           * Call logout endpoint to invalidate session on backend:
+           *
+           * await fetch('YOUR_API_URL/logout', {
+           *   method: 'POST',
+           *   headers: {
+           *     'Authorization': `Bearer ${token}`,
+           *     'Content-Type': 'application/json'
+           *   }
+           * });
+           */
+
+          // Clear auth state from Redux
+          dispatch(logout());
+
+          // Navigation will be handled by root layout useEffect
+          // when token state changes to null
+        },
+        style: "destructive",
+      },
+    ]);
   };
 
   const toggleSetting = (key: keyof typeof settings) => {
@@ -58,6 +93,21 @@ export default function ProfileScreen() {
       ...prev,
       [key]: !prev[key],
     }));
+    /**
+     * TODO: API Integration
+     * Save setting preference to backend:
+     *
+     * await fetch('YOUR_API_URL/user/settings', {
+     *   method: 'PUT',
+     *   headers: {
+     *     'Authorization': `Bearer ${token}`,
+     *     'Content-Type': 'application/json'
+     *   },
+     *   body: JSON.stringify({
+     *     [key]: !settings[key]
+     *   })
+     * });
+     */
   };
 
   const settingsSections = [
@@ -209,7 +259,7 @@ export default function ProfileScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         className="flex-1"
       >
         {/* Profile Card */}
