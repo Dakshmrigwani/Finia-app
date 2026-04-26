@@ -16,6 +16,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTheme } from "../../context/themeContext";
+import { spacing } from "../../utils/styles";
 
 const notifications = [
   {
@@ -65,19 +66,8 @@ export default function NotificationsScreen() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background , paddingTop: spacing.xl }}>
       <StatusBar style={isDark ? "light" : "dark"} />
-
-      {/* Header Section */}
-      <View className="px-6 py-4 flex-row justify-between items-center">
-        <TouchableOpacity>
-          <MaterialCommunityIcons name="menu" size={26} color={colors.textMain} />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold" style={{ color: colors.textMain }}>Notifications</Text>
-        <View className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-           <Image source={{ uri: "https://avatar.iran.liara.run/public/65" }} className="w-full h-full" />
-        </View>
-      </View>
 
       {/* Sub-navigation Tabs */}
       <View className="flex-row px-6 mb-6 gap-6">

@@ -29,6 +29,7 @@ import Animated, {
   SlideInRight,
 } from 'react-native-reanimated';
 import { spacing } from '../../utils/styles';
+import { useTheme } from '../../context/themeContext';
 
 type Message = {
   id: string;
@@ -47,7 +48,7 @@ const suggestedQuestions = [
 
 export default function AIChatRoom() {
   const systemColorScheme = useColorScheme();
-  const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
+  const { isDark , toggleTheme } = useTheme();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -191,7 +192,7 @@ export default function AIChatRoom() {
   }));
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? 'bg-[#1a1a2e]' : 'bg-[#fcf8ff]'}`} style={{paddingTop: spacing.xl}}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-[#1a1a2e]' : 'bg-[#fcf8ff]'}`} style={{paddingTop: spacing.xl , paddingBottom: spacing.xl}}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       
       {/* Header */}
@@ -219,7 +220,7 @@ export default function AIChatRoom() {
         </View>
         <View className="flex-row gap-3">
           <TouchableOpacity 
-            onPress={() => setIsDark(!isDark)}
+            onPress={() => toggleTheme(!isDark)}
             className={`w-9 h-9 rounded-full items-center justify-center ${isDark ? 'bg-[#3d3b54]' : 'bg-[#f5f2ff]'}`}
           >
             <MaterialIcons name={isDark ? 'light-mode' : 'dark-mode'} size={20} color={colors.primary} />
@@ -234,7 +235,7 @@ export default function AIChatRoom() {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 100}
       >
         <ScrollView
           ref={scrollViewRef}

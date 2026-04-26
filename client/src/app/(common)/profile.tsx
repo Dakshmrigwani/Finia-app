@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/Slices/authSlice";
 import { RootState } from "../../store";
+import { useTheme } from "../../context/themeContext";
 
 type SettingItem = {
   id: string;
@@ -34,7 +35,7 @@ type SettingItem = {
 export default function ProfileScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
 
@@ -245,17 +246,6 @@ export default function ProfileScreen() {
       className={`flex-1 ${isDark ? "bg-[#1a1a2e]" : "bg-[#fcf8ff]"}`}
     >
       <StatusBar style={isDark ? "light" : "dark"} />
-
-      {/* Header */}
-      <View
-        className={`px-5 pt-4 pb-4 border-b ${isDark ? "border-[#2f2e43]" : "border-[#e2e0fc]"}`}
-      >
-        <Text
-          className={`text-2xl font-headline font-bold ${isDark ? "text-[#f2efff]" : "text-[#1a1a2e]"}`}
-        >
-          Profile
-        </Text>
-      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}

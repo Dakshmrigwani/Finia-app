@@ -6,6 +6,9 @@
     "web": {
       "output": "static"
     },
+     "android": {
+      "softwareKeyboardLayoutMode": "pan"
+    },
     "splash": {
       "image": "./src/components/images/splash.png",
       "resizeMode": "cover",

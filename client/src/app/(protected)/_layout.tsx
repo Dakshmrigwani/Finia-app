@@ -39,7 +39,7 @@ export default function ProtectedLayout() {
         headerRight: () => (
           <View style={{ flexDirection: "row", gap: 12, marginRight: 15 }}>
             <TouchableOpacity
-              onPress={handleToggleTheme}
+              onPress={() => router.push("/(common)/notification")}
               style={{
                 width: 36,
                 height: 36,
@@ -73,6 +73,7 @@ export default function ProtectedLayout() {
               />
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() => router.push("/(common)/profile")}
               style={{
                 width: 36,
                 height: 36,
@@ -82,7 +83,7 @@ export default function ProtectedLayout() {
                 backgroundColor: isDark ? "#3d3b54" : "#f5f2ff",
               }}
             >
-              <MaterialIcons name="person" size={20} color={ACTIVE_COLOR} onPress={() => router.push("/(common)/profile")}/>
+              <MaterialIcons name="person" size={20} color={ACTIVE_COLOR} />
             </TouchableOpacity>
           </View>
         ),
@@ -178,6 +179,7 @@ export default function ProtectedLayout() {
         name="aichat"
         options={{
           headerShown: false, // Explicitly hide header for AI chat
+           tabBarStyle: { display: 'none' },
           tabBarButton: (props) => (
             <TouchableOpacity
               {...props}

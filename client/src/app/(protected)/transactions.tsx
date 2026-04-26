@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useTheme } from "../../context/themeContext";
 
 type TransactionItem = {
   id: string;
@@ -123,7 +124,8 @@ const sampleTransactions: TransactionItem[] = [
  */
 export default function TransactionsScreen() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+ 
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
