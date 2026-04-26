@@ -6,7 +6,17 @@
     "web": {
       "output": "static"
     },
+    "splash": {
+      "image": "./src/components/images/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
     "name": "client",
-    "slug": "client"
+    "slug": "client",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
