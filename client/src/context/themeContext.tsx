@@ -1,10 +1,14 @@
-// theme/ThemeContext.tsx
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, type PropsWithChildren } from "react";
 import { useColorScheme } from "react-native";
 
-const ThemeContext = createContext(null);
+type ThemeContextValue = {
+  isDark: boolean;
+  toggleTheme: () => void;
+};
 
-export const ThemeProvider = ({ children }) => {
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+export const ThemeProvider = ({ children }: PropsWithChildren) => {
   const systemTheme = useColorScheme();
   const [isDark, setIsDark] = useState(systemTheme === "dark");
 
@@ -17,4 +21,12 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const value = useContext(ThemeContext);
+
+  if (!value) {
+    throw new Error("useTheme must be used inside ThemeProvider");
+  }
+
+  return value;
+};

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -129,26 +129,41 @@ export default function TransactionsScreen() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredTransactions = sampleTransactions.filter((transaction) => {
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "expense" && transaction.type === "expense") ||
-      (filter === "income" && transaction.type === "income");
-    const matchesSearch =
-      transaction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transaction.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const filteredTransactions = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
 
-  const totalExpense = sampleTransactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    return sampleTransactions.filter((transaction) => {
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "expense" && transaction.type === "expense") ||
+        (filter === "income" && transaction.type === "income");
+      const matchesSearch =
+        !normalizedSearch ||
+        transaction.name.toLowerCase().includes(normalizedSearch) ||
+        transaction.category.toLowerCase().includes(normalizedSearch);
+      return matchesFilter && matchesSearch;
+    });
+  }, [filter, searchQuery]);
 
-  const totalIncome = sampleTransactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = useMemo(
+    () =>
+      sampleTransactions
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0),
+    [],
+  );
 
-  const renderTransactionItem = ({ item }: { item: TransactionItem }) => (
+  const totalIncome = useMemo(
+    () =>
+      sampleTransactions
+        .filter((t) => t.type === "income")
+        .reduce((sum, t) => sum + t.amount, 0),
+    [],
+  );
+
+  const keyExtractor = useCallback((item: TransactionItem) => item.id, []);
+
+  const renderTransactionItem = useCallback(({ item }: { item: TransactionItem }) => (
     <TouchableOpacity
       activeOpacity={0.7}
       className={`flex-row items-center justify-between p-4 rounded-xl ${isDark ? "bg-[#2f2e43]" : "bg-white"} mb-3 shadow-sm`}
@@ -209,7 +224,7 @@ export default function TransactionsScreen() {
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [isDark]);
 
   return (
     <SafeAreaView
@@ -334,7 +349,7 @@ export default function TransactionsScreen() {
       <FlatList
         data={filteredTransactions}
         renderItem={renderTransactionItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         scrollEnabled={true}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
       />

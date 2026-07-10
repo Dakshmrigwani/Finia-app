@@ -17,6 +17,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/Slices/authSlice";
 import { RootState } from "../../store";
 import { useTheme } from "../../context/themeContext";
+import * as SecureStore from "expo-secure-store";
+import { storageKeys } from "../../constants/storageKeys";
 
 type SettingItem = {
   id: string;
@@ -55,7 +57,7 @@ export default function ProfileScreen() {
     accountStatus: "Active",
   };
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
@@ -64,25 +66,10 @@ export default function ProfileScreen() {
       },
       {
         text: "Logout",
-        onPress: () => {
-          /**
-           * TODO: API Integration
-           * Call logout endpoint to invalidate session on backend:
-           *
-           * await fetch('YOUR_API_URL/logout', {
-           *   method: 'POST',
-           *   headers: {
-           *     'Authorization': `Bearer ${token}`,
-           *     'Content-Type': 'application/json'
-           *   }
-           * });
-           */
-
-          // Clear auth state from Redux
+        onPress: async () => {
+          await SecureStore.deleteItemAsync(storageKeys.authToken);
           dispatch(logout());
-
-          // Navigation will be handled by root layout useEffect
-          // when token state changes to null
+          router.replace("/(auth)/login");
         },
         style: "destructive",
       },
@@ -94,24 +81,10 @@ export default function ProfileScreen() {
       ...prev,
       [key]: !prev[key],
     }));
-    /**
-     * TODO: API Integration
-     * Save setting preference to backend:
-     *
-     * await fetch('YOUR_API_URL/user/settings', {
-     *   method: 'PUT',
-     *   headers: {
-     *     'Authorization': `Bearer ${token}`,
-     *     'Content-Type': 'application/json'
-     *   },
-     *   body: JSON.stringify({
-     *     [key]: !settings[key]
-     *   })
-     * });
-     */
+    // Future settings persistence should go through src/api and a mutation hook.
   };
 
-  const settingsSections = [
+  const settingsSections: Array<{ title: string; items: SettingItem[] }> = [
     {
       title: "Security & Privacy",
       items: [

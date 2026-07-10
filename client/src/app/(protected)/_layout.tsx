@@ -180,9 +180,10 @@ export default function ProtectedLayout() {
         options={{
           headerShown: false, // Explicitly hide header for AI chat
            tabBarStyle: { display: 'none' },
-          tabBarButton: (props) => (
+          tabBarButton: ({ onPress, accessibilityState }) => (
             <TouchableOpacity
-              {...props}
+              onPress={onPress}
+              accessibilityState={accessibilityState}
               style={{ top: -35, alignItems: "center" }}
               activeOpacity={0.9}
             >
@@ -253,7 +254,7 @@ export default function ProtectedLayout() {
               <Text
                 style={{ color, fontSize: 8, fontWeight: "bold", marginTop: 2 }}
               >
-                Savings
+                Budget
               </Text>
             </View>
           ),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { memo, useState } from "react";
 import {
   View,
   Text,
@@ -12,171 +12,87 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withSequence,
-  Easing,
-  cancelAnimation,
-} from "react-native-reanimated";
 import { Link, useRouter } from "expo-router";
-import { useDispatch } from "react-redux";
-import { setToken, setUser } from "../../store/Slices/authSlice";
 import { spacing } from "../../utils/styles";
+import { useLogin } from "../../hooks/Auth/useLogin";
+import { Logger } from "../../utils/logger";
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState<"email" | "password" | null>(
-    null,
-  );
+type LoginInputProps = {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  isPassword?: boolean;
+  type?: KeyboardTypeOptions;
+  showPassword: boolean;
+  onTogglePassword: () => void;
+};
 
-  // Animation values
-  const contentOpacity = useSharedValue(0);
-  const contentTranslateY = useSharedValue(20);
-  const buttonScale = useSharedValue(1);
-  const router = useRouter();
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    contentOpacity.value = withTiming(1, { duration: 800 });
-    contentTranslateY.value = withSpring(0, { damping: 15 });
-
-    return () => {
-      cancelAnimation(contentOpacity);
-      cancelAnimation(contentTranslateY);
-      cancelAnimation(buttonScale);
-    };
-  }, []);
-
-  const handleLogin = async () => {
-    if (!email || !password) return;
-    buttonScale.value = withSequence(withSpring(0.95), withSpring(1));
-    setIsLoading(true);
-
-    try {
-      /**
-       * TODO: API Integration
-       * Replace this mock with actual API call:
-       *
-       * const response = await fetch('YOUR_API_URL/login', {
-       *   method: 'POST',
-       *   headers: { 'Content-Type': 'application/json' },
-       *   body: JSON.stringify({ email, password })
-       * });
-       *
-       * const data = await response.json();
-       *
-       * if (!response.ok) {
-       *   throw new Error(data.message || 'Login failed');
-       * }
-       *
-       * // Save token and user data to Redux
-       * dispatch(setToken(data.token));
-       * dispatch(setUser(data.user));
-       */
-
-      // Mock API call - simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Mock successful login response
-      const mockToken = "mock-jwt-token-" + Date.now();
-      const mockUser = {
-        id: "1",
-        email: email,
-        name: email.split("@")[0],
-      };
-
-      // Dispatch actions to update Redux state
-      dispatch(setToken(mockToken));
-      dispatch(setUser(mockUser));
-
-      // Navigation will be handled automatically by root layout useEffect
-      // when token state changes in Redux
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Login error:", error);
-      // TODO: Show error toast/alert to user
-      setIsLoading(false);
-    }
-  };
-
-  const animatedContentStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-    transform: [{ translateY: contentTranslateY.value }],
-  }));
-
-  const animatedButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
-
-  type RenderInputProps = {
-    label: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    icon: React.ComponentProps<typeof Ionicons>["name"];
-    isPassword?: boolean;
-    type?: KeyboardTypeOptions;
-    fieldKey: "email" | "password";
-  };
-
-  // Reusable Input Component for a sober look
-  const RenderInput = ({
+const LoginInput = memo(
+  ({
     label,
     value,
     onChangeText,
     icon,
     isPassword = false,
     type = "default",
-    fieldKey,
-  }: RenderInputProps) => (
-    <View className="mb-5">
-      <Text className="text-[12px] font-medium text-slate-500 mb-2 ml-1 uppercase tracking-widest">
-        {label}
-      </Text>
-      <View
-        className={`flex-row items-center h-14 px-4 rounded-2xl bg-white border ${
-          focusedField === fieldKey
-            ? "border-indigo-500 shadow-sm"
-            : "border-slate-100"
-        }`}
-        style={focusedField === fieldKey ? { elevation: 2 } : {}}
-      >
-        <Ionicons
-          name={icon}
-          size={20}
-          color={focusedField === fieldKey ? "#6366f1" : "#94a3b8"}
-        />
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          onFocus={() => setFocusedField(fieldKey)}
-          onBlur={() => setFocusedField(null)}
-          placeholder={`Enter your ${label.toLowerCase()}`}
-          placeholderTextColor="#cbd5e1"
-          secureTextEntry={isPassword && !showPassword}
-          keyboardType={type}
-          autoCapitalize="none"
-          className="flex-1 h-full ml-3 text-slate-900 text-base"
-        />
-        {isPassword && (
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={20}
-              color="#94a3b8"
-            />
-          </TouchableOpacity>
-        )}
+    showPassword,
+    onTogglePassword,
+  }: LoginInputProps) => {
+    return (
+      <View className="mb-5">
+        <Text className="text-[12px] font-medium text-slate-500 mb-2 ml-1 uppercase tracking-widest">
+          {label}
+        </Text>
+        <View
+          className="flex-row items-center h-14 px-4 rounded-2xl bg-white border border-slate-100"
+          style={{ elevation: 1 }}
+        >
+          <Ionicons name={icon} size={20} color="#94a3b8" />
+          <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={`Enter your ${label.toLowerCase()}`}
+            placeholderTextColor="#cbd5e1"
+            secureTextEntry={isPassword && !showPassword}
+            keyboardType={type}
+            autoCapitalize="none"
+            className="flex-1 h-full ml-3 text-slate-900 text-base"
+          />
+          {isPassword && (
+            <TouchableOpacity onPress={onTogglePassword}>
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color="#94a3b8"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  },
+);
+
+export default function LoginScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const router = useRouter();
+  const loginMutation = useLogin();
+
+  const handleLogin = async () => {
+    if (!email || !password) return;
+
+    try {
+      await loginMutation.mutateAsync({ email, password });
+    } catch (error) {
+      Logger.error("Login screen submit failed", error);
+    }
+  };
 
   return (
     <SafeAreaView
@@ -191,22 +107,18 @@ export default function LoginScreen() {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none"
           contentContainerStyle={{
             flexGrow: 1,
             paddingHorizontal: 24,
             justifyContent: "center",
           }}
         >
-          <Animated.View style={animatedContentStyle}>
+          <View>
             {/* Header */}
             <View className="items-center mb-10">
-              <View className="w-16 h-16 bg-indigo-600 rounded-3xl items-center justify-center shadow-xl shadow-indigo-200">
-                <MaterialCommunityIcons
-                  name="shield-check"
-                  size={32}
-                  color="white"
-                />
-              </View>
+             
               <Text className="text-3xl font-bold text-slate-900 mt-6 tracking-tight">
                 Welcome back
               </Text>
@@ -217,21 +129,23 @@ export default function LoginScreen() {
 
             {/* Form */}
             <View>
-              <RenderInput
+              <LoginInput
                 label="Email Address"
                 value={email}
                 onChangeText={setEmail}
                 icon="mail-outline"
                 type="email-address"
-                fieldKey="email"
+                showPassword={showPassword}
+                onTogglePassword={() => setShowPassword((value) => !value)}
               />
-              <RenderInput
+              <LoginInput
                 label="Password"
                 value={password}
                 onChangeText={setPassword}
                 icon="lock-closed-outline"
                 isPassword
-                fieldKey="password"
+                showPassword={showPassword}
+                onTogglePassword={() => setShowPassword((value) => !value)}
               />
 
               <TouchableOpacity
@@ -243,27 +157,25 @@ export default function LoginScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <Animated.View style={animatedButtonStyle}>
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  className="h-16 rounded-2xl overflow-hidden shadow-lg shadow-indigo-200"
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={handleLogin}
+                disabled={loginMutation.isLoading}
+                className="h-16 rounded-2xl overflow-hidden shadow-lg shadow-indigo-200"
+              >
+                <LinearGradient
+                  colors={["#6366f1", "#4f46e5"]}
+                  className="flex-1 items-center justify-center"
                 >
-                  <LinearGradient
-                    colors={["#6366f1", "#4f46e5"]}
-                    className="flex-1 items-center justify-center"
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color="white" />
-                    ) : (
-                      <Text className="text-white font-bold text-lg">
-                        Sign In
-                      </Text>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
+                  {loginMutation.isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white font-bold text-lg">
+                      Sign In
+                    </Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
 
             {/* Divider */}
@@ -302,7 +214,7 @@ export default function LoginScreen() {
                 </Link>
               </Text>
             </View>
-          </Animated.View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 

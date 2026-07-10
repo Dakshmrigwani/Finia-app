@@ -23,6 +23,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { Logger } from '../../utils/logger';
 
 const { width, height } = Dimensions.get('window');
 
@@ -121,11 +122,11 @@ export default function TheLedgerOnboarding() {
 
   const handleGoalSelect = (goalId: string) => {
     setSelectedGoal(goalId);
-    console.log(`Selected goal: ${goalId}`);
+    Logger.debug('Onboarding goal selected', { goalId });
   };
 
   const handleContinue = () => {
-    console.log(`Continue with goal: ${selectedGoal}`);
+    Logger.debug('Continuing onboarding with goal', { selectedGoal });
   router.push("/incomeSelection")
   };
 

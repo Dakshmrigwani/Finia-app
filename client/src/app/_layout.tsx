@@ -3,11 +3,11 @@ import { useEffect } from "react";
 import { Slot, useRouter, useSegments } from "expo-router"; // ← back to Slot
 import * as SplashScreen from "expo-splash-screen";
 import { Provider, useSelector } from "react-redux";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { useAppInit } from "../hooks/useAppInit";
 import { RootState, store } from "../store";
-import { queryClient } from "../lib/queryClient";
 import { ThemeProvider } from "../context/themeContext";
+import { Logger } from "../utils/logger";
+import { QueryProvider } from "../providers/QueryProvider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,9 +15,9 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
+        <QueryProvider>
           <RootNavigator />
-        </QueryClientProvider>
+        </QueryProvider>
       </ThemeProvider>
     </Provider>
   );
@@ -38,11 +38,20 @@ useEffect(() => {
   const inAuth = segments[0] === "(auth)";
   const inOnboarding = segments[0] === "(onboarding)";
   const inCommon = segments[0] === "(common)";
+  Logger.debug("Route guard evaluated", {
+    segment: segments[0],
+    hasToken: Boolean(token),
+    hasOnboarded,
+    inProtected,
+    inAuth,
+    inOnboarding,
+    inCommon,
+  });
 
   if (!hasOnboarded) {
     // ↓ add !inCommon here
     if (!inOnboarding && !inProtected && !inCommon) {
-      router.replace("/(protected)"); // testing bypass
+      router.replace("/(onboarding)"); // testing bypass
     }
   } else if (!token) {
     // ↓ add !inCommon here too (for when real auth is wired up)

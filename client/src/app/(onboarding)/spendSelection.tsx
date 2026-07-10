@@ -21,6 +21,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { Logger } from '../../utils/logger';
 
 type SpendingCategory = {
   id: string;
@@ -98,7 +99,7 @@ export default function MoneyDisappearScreen() {
       withSpring(1)
     );
     
-    console.log('Selected categories:', selectedCategories);
+    Logger.debug('Spending categories selected', { selectedCategories });
    router.push("/finalize")
   };
 

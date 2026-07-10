@@ -22,6 +22,7 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { Logger } from '../../utils/logger';
 
 export default function MonthlyIncomeScreen() {
   const [income, setIncome] = useState('');
@@ -74,7 +75,7 @@ const router = useRouter()
   const handleContinue = () => {
     if (!income || parseFloat(income) === 0) return;
     
-    console.log('Monthly income:', income);
+    Logger.debug('Monthly income selected', { income });
    router.push("/spendSelection")
   };
 

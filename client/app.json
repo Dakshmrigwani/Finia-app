@@ -6,8 +6,9 @@
     "web": {
       "output": "static"
     },
-     "android": {
-      "softwareKeyboardLayoutMode": "pan"
+    "android": {
+      "softwareKeyboardLayoutMode": "pan",
+      "package": "com.anonymous.client"
     },
     "splash": {
       "image": "./src/components/images/splash.png",

@@ -220,7 +220,7 @@ export default function AIChatRoom() {
         </View>
         <View className="flex-row gap-3">
           <TouchableOpacity 
-            onPress={() => toggleTheme(!isDark)}
+            onPress={toggleTheme}
             className={`w-9 h-9 rounded-full items-center justify-center ${isDark ? 'bg-[#3d3b54]' : 'bg-[#f5f2ff]'}`}
           >
             <MaterialIcons name={isDark ? 'light-mode' : 'dark-mode'} size={20} color={colors.primary} />

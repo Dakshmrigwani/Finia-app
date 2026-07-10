@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setToken } from '../store/Slices/authSlice';
 import { setHasOnboarded } from '../store/Slices/appSlice';
+import { Logger } from '../utils/logger';
+import { storageKeys } from '../constants/storageKeys';
 
 export const useAppInit = () => {
   const [isReady, setIsReady] = useState(false);
@@ -13,14 +15,14 @@ export const useAppInit = () => {
     const init = async () => {
       try {
         const [token, onboarded] = await Promise.all([
-          SecureStore.getItemAsync('auth_token'),
-          AsyncStorage.getItem('has_onboarded'),
+          SecureStore.getItemAsync(storageKeys.authToken),
+          AsyncStorage.getItem(storageKeys.hasOnboarded),
         ]);
 
         if (token) dispatch(setToken(token));
         if (onboarded === 'true') dispatch(setHasOnboarded(true));
       } catch (e) {
-        console.error('App init failed', e);
+        Logger.error('App init failed', e);
       } finally {
         setIsReady(true);
       }

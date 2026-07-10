@@ -87,20 +87,7 @@ export default function StartUnderstandingScreen() {
       withSpring(0.96),
       withSpring(1)
     );
-    /**
-     * TODO: API Integration
-     * After onboarding finishes, you may want to:
-     * 1. Send user preferences to backend
-     * 2. Create initial user profile
-     * 
-     * await fetch('YOUR_API_URL/onboarding/complete', {
-     *   method: 'POST',
-     *   headers: { 'Content-Type': 'application/json' },
-     *   body: JSON.stringify({
-     *     preferences: { ... }
-     *   })
-     * });
-     */
+    // Future onboarding persistence should go through src/api and a mutation hook.
     dispatch(setHasOnboarded(true));
     // Navigation will be handled by root layout useEffect
     // which will redirect to auth/login when hasOnboarded is true but no token
