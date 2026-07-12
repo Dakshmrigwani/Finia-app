@@ -14,4 +14,8 @@ export const queryKeys = {
     all: ["budget"] as const,
     list: () => [...queryKeys.budget.all, "list"] as const,
   },
+  goal: {
+    all: ["goal"] as const,
+    list: () => [...queryKeys.goal.all, "list"] as const,
+  },
 } as const;
