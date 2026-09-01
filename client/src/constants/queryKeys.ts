@@ -18,4 +18,9 @@ export const queryKeys = {
     all: ["goal"] as const,
     list: () => [...queryKeys.goal.all, "list"] as const,
   },
+  transaction: {
+    all: ["transaction"] as const,
+    list: (filters?: object) =>
+      [...queryKeys.transaction.all, "list", filters ?? {}] as const,
+  },
 } as const;

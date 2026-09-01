@@ -1,14 +1,12 @@
 import { apiClient } from "./client";
+import { AuthUser, UpdateProfilePayload, updateUserProfile } from "./user.api";
+
+export type { AuthUser, UpdateProfilePayload };
+export { updateUserProfile };
 
 export type LoginPayload = {
   email: string;
   password: string;
-};
-
-export type AuthUser = {
-  id?: string;
-  email: string;
-  name?: string;
 };
 
 export type LoginResponse = {

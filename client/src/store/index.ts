@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import appReducer from './Slices/appSlice';
 import authReducer from './Slices/authSlice';
+import onboardingReducer from './Slices/onboardingSlice';
 
 export const store = configureStore({
   reducer: {
     app: appReducer,
     auth: authReducer,
+    onboarding: onboardingReducer,
   },
 });
 

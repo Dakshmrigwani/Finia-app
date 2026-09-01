@@ -1,9 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
   SafeAreaView,
   TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,234 +16,280 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSpring,
-  withSequence,
+  withDelay,
   Easing,
-  interpolate,
-  Extrapolate,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
 import { setHasOnboarded } from '../../store/Slices/appSlice';
+import { resetOnboarding } from '../../store/Slices/onboardingSlice';
+import { updateUserProfile } from '../../api/user.api';
+import { Logger } from '../../utils/logger';
 
-
-type TrustFeature = {
-  id: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  title: string;
-};
-
-const trustFeatures: TrustFeature[] = [
-  { id: 'privacy', icon: 'lock-open', title: 'Your data stays private' },
-  { id: 'no-bank', icon: 'offline-bolt', title: 'No bank login required' },
-  { id: 'control', icon: 'verified-user', title: 'You\'re always in control' },
+const PERKS = [
+  { icon: 'bar-chart' as const, text: 'Personalised spending insights' },
+  { icon: 'notifications-none' as const, text: 'Smart nudges before you overspend' },
+  { icon: 'trending-up' as const, text: 'Progress tracking toward your goals' },
 ];
 
-export default function StartUnderstandingScreen() {
-  // Animation values
-  const fadeInAnim = useSharedValue(0);
-  const slideUpAnim = useSharedValue(30);
-  const progressAnim = useSharedValue(0);
-  const iconScale = useSharedValue(0.8);
-  const featuresStagger = useSharedValue(0);
-  const buttonScale = useSharedValue(1);
-  const secondaryButtonScale = useSharedValue(1);
-  const router = useRouter();
+export default function FinalizeScreen() {
   const dispatch = useDispatch();
+  const { motive, income, spendMostlyOn } = useSelector(
+    (state: RootState) => state.onboarding
+  );
+  const [saving, setSaving] = useState(false);
+
+  // Entrance animations
+  const iconScale = useSharedValue(0.7);
+  const iconOpacity = useSharedValue(0);
+  const titleOpacity = useSharedValue(0);
+  const titleY = useSharedValue(16);
+  const perksOpacity = useSharedValue(0);
+  const ctaOpacity = useSharedValue(0);
+  const ctaY = useSharedValue(12);
 
   useEffect(() => {
-    // Entrance animation
-    fadeInAnim.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-    });
-    slideUpAnim.value = withTiming(0, {
-      duration: 500,
-      easing: Easing.out(Easing.cubic),
-    });
+    iconScale.value = withDelay(100, withSpring(1, { damping: 10, stiffness: 80 }));
+    iconOpacity.value = withDelay(100, withTiming(1, { duration: 400 }));
 
-    // Progress bar animation
-    progressAnim.value = withTiming(1, { duration: 800 });
+    titleOpacity.value = withDelay(350, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    titleY.value = withDelay(350, withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) }));
 
-    // Icon pop animation
-    iconScale.value = withSequence(
-      withSpring(0.8),
-      withSpring(1, { damping: 12, stiffness: 100 })
-    );
+    perksOpacity.value = withDelay(650, withTiming(1, { duration: 500 }));
 
-    // Staggered feature animations
-    featuresStagger.value = withTiming(1, { duration: 800 });
+    ctaOpacity.value = withDelay(900, withTiming(1, { duration: 400 }));
+    ctaY.value = withDelay(900, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
 
     return () => {
-      cancelAnimation(fadeInAnim);
-      cancelAnimation(slideUpAnim);
-      cancelAnimation(progressAnim);
       cancelAnimation(iconScale);
-      cancelAnimation(featuresStagger);
-      cancelAnimation(buttonScale);
-      cancelAnimation(secondaryButtonScale);
+      cancelAnimation(iconOpacity);
+      cancelAnimation(titleOpacity);
+      cancelAnimation(titleY);
+      cancelAnimation(perksOpacity);
+      cancelAnimation(ctaOpacity);
+      cancelAnimation(ctaY);
     };
   }, []);
 
-  const handleStartTracking = () => {
-    buttonScale.value = withSequence(
-      withSpring(0.96),
-      withSpring(1)
-    );
-    // Future onboarding persistence should go through src/api and a mutation hook.
-    dispatch(setHasOnboarded(true));
-    // Navigation will be handled by root layout useEffect
-    // which will redirect to auth/login when hasOnboarded is true but no token
-  };
-
-  const handleConnectLater = () => {
-    secondaryButtonScale.value = withSequence(
-      withSpring(0.96),
-      withSpring(1)
-    );
-    // Skip for now and proceed to login
-    dispatch(setHasOnboarded(true));
-  };
-    // Navigate to main dashboard
-
-  // Animated styles
-  const mainContainerStyle = useAnimatedStyle(() => ({
-    opacity: fadeInAnim.value,
-    transform: [{ translateY: slideUpAnim.value }],
-  }));
-
-  const progressBarStyle = useAnimatedStyle(() => ({
-    width: `${progressAnim.value * 100}%`,
-  }));
-
   const iconStyle = useAnimatedStyle(() => ({
+    opacity: iconOpacity.value,
     transform: [{ scale: iconScale.value }],
   }));
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: titleOpacity.value,
+    transform: [{ translateY: titleY.value }],
+  }));
+  const perksStyle = useAnimatedStyle(() => ({ opacity: perksOpacity.value }));
+  const ctaStyle = useAnimatedStyle(() => ({
+    opacity: ctaOpacity.value,
+    transform: [{ translateY: ctaY.value }],
+  }));
 
-  const getFeatureStyle = (index: number) => {
-    return useAnimatedStyle(() => {
-      const delay = index * 0.1;
-      const opacity = featuresStagger.value >= delay ? 1 : 0;
-      const translateX = featuresStagger.value >= delay ? 0 : -20;
-      return {
-        opacity,
-        transform: [{ translateX }],
-      };
-    });
+  const markOnboarded = async () => {
+    try {
+      await AsyncStorage.setItem('has_onboarded', 'true');
+    } catch (e) {
+      Logger.warn('Could not persist hasOnboarded flag', e);
+    }
+    dispatch(resetOnboarding());
+    dispatch(setHasOnboarded(true));
+    // Root layout will redirect to /(auth)/login automatically
   };
 
-  const buttonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
+  const handleStart = async () => {
+    setSaving(true);
+    try {
+      // Submit collected onboarding data to the backend
+      await updateUserProfile({
+        ...(motive ? { motive } : {}),
+        ...(income ? { income } : {}),
+        ...(spendMostlyOn.length > 0 ? { spendMostlyOn: spendMostlyOn.join(',') } : {}),
+      });
+    } catch (err) {
+      // Non-fatal — missing data will be prompted from home screen
+      Logger.warn('Onboarding profile update failed — will retry from home', err);
+    } finally {
+      await markOnboarded();
+    }
+  };
 
-  const secondaryButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: secondaryButtonScale.value }],
-  }));
+  const handleSkip = async () => {
+    await markOnboarded();
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8F7FF] pt-6">
+    <SafeAreaView style={styles.safe}>
       <StatusBar style="dark" />
-      {/* Main Content */}
-      <Animated.View style={mainContainerStyle} className="flex-1 px-6 pt-24 pb-12">
-        {/* Progress Indicator */}
-        <View className="w-full h-[3px] bg-[#EEF0FF] mb-10 rounded-full overflow-hidden">
-          <Animated.View 
-            style={progressBarStyle}
-            className="h-full bg-[#6C47FF] rounded-full"
-          />
-        </View>
 
-        {/* Hero Content */}
-        <View className="w-full mb-12 items-center">
-          <Animated.View style={iconStyle}>
-            <View className="w-14 h-14 mb-8 items-center justify-center bg-[#EEF0FF]/50 rounded-2xl border border-[#6C47FF]/10">
-              <MaterialIcons name="analytics" size={28} color="#6C47FF" />
+      <View style={styles.body}>
+        {/* Check mark icon */}
+        <Animated.View style={[styles.iconWrap, iconStyle]}>
+          <LinearGradient
+            colors={['#6c47ff', '#5323e6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.iconGradient}
+          >
+            <MaterialIcons name="check" size={36} color="#ffffff" />
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Title */}
+        <Animated.View style={[styles.titleBlock, titleStyle]}>
+          <Text style={styles.title}>You're all set</Text>
+          <Text style={styles.subtitle}>
+            Here's what you'll get from day one.
+          </Text>
+        </Animated.View>
+
+        {/* Perks list */}
+        <Animated.View style={[styles.perks, perksStyle]}>
+          {PERKS.map((perk, i) => (
+            <View key={i} style={styles.perkRow}>
+              <View style={styles.perkIcon}>
+                <MaterialIcons name={perk.icon} size={18} color="#5323e6" />
+              </View>
+              <Text style={styles.perkText}>{perk.text}</Text>
             </View>
-          </Animated.View>
-          
-          <Text className="font-headline text-[32px] font-extrabold text-[#1e1b4b] tracking-tight leading-tight text-center mb-4">
-            Start understanding{' '}
-            <Text className="text-[#6C47FF]">your money</Text>
-          </Text>
-          
-          <Text className="text-[#64748b] font-light text-[17px] leading-relaxed max-w-[280px] text-center opacity-80">
-            No bank connection needed — just add your first transaction to begin
-          </Text>
-        </View>
-
-        {/* Trust Features with Staggered Animation */}
-        <View className="w-full flex-col gap-5 mb-12">
-          {trustFeatures.map((feature, index) => {
-            const FeatureAnim = getFeatureStyle(index);
-            return (
-              <Animated.View 
-                key={feature.id}
-                style={FeatureAnim}
-                className="flex-row items-center gap-4 px-2"
-              >
-                <View className="w-8 h-8 items-center justify-center">
-                  <MaterialIcons name={feature.icon} size={20} color="#6C47FF" opacity={0.6} />
-                </View>
-                <Text className="text-[15px] font-medium text-[#1e1b4b]/70 tracking-tight">
-                  {feature.title}
-                </Text>
-              </Animated.View>
-            );
-          })}
-        </View>
-
-        {/* Action Area */}
-        <View className="w-full mt-auto flex-col items-center gap-4">
-          {/* Primary Button */}
-          <Animated.View style={buttonStyle} className="w-full">
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleStartTracking}
-              className="w-full rounded-2xl overflow-hidden shadow-md"
-              style={{
-                shadowColor: '#6C47FF',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 20,
-                elevation: 5,
-              }}
-            >
-              <LinearGradient
-                colors={['#6C47FF', '#5323e6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="py-4 items-center"
-              >
-                <Text className="text-white font-semibold text-[17px]">
-                  Start tracking with Us
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <Text className="text-center mt-4 text-[10px] uppercase tracking-[0.15em] text-[#64748b] font-bold opacity-60">
-              Takes less than 10 seconds
-            </Text>
-          </Animated.View>
-
-          {/* Secondary Button */}
-          <Animated.View style={secondaryButtonStyle}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handleConnectLater}
-              className="py-3 px-6 mt-2"
-            >
-              <Text className="text-[#6C47FF] text-[15px] font-semibold">
-                Connect later (optional)
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Animated.View>
-
-      {/* Background Polish */}
-      <View className="absolute inset-0 -z-10 pointer-events-none">
-        <View className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-[#6C47FF]/5 rounded-full blur-[100px]" />
-        <View className="absolute -bottom-[5%] -right-[5%] w-[30%] h-[30%] bg-[#6C47FF]/3 rounded-full blur-[80px]" />
+          ))}
+        </Animated.View>
       </View>
+
+      {/* CTA area */}
+      <Animated.View style={[styles.ctaArea, ctaStyle]}>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={handleStart}
+          disabled={saving}
+          style={styles.ctaBtn}
+        >
+          <LinearGradient
+            colors={['#6c47ff', '#5323e6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.ctaGradient}
+          >
+            {saving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Text style={styles.ctaLabel}>Start tracking</Text>
+                <MaterialIcons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 6 }} />
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={handleSkip}
+          disabled={saving}
+          style={styles.skipBtn}
+        >
+          <Text style={styles.skipLabel}>Skip for now</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#fcf8ff',
+  },
+  body: {
+    flex: 1,
+    paddingHorizontal: 28,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  iconWrap: {
+    marginBottom: 32,
+  },
+  iconGradient: {
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleBlock: {
+    marginBottom: 36,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#1a1a2e',
+    letterSpacing: -1.2,
+    lineHeight: 42,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#797588',
+    lineHeight: 24,
+  },
+  perks: {
+    gap: 16,
+    width: '100%',
+  },
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  perkIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#f0edff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  perkText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1a1a2e',
+    lineHeight: 20,
+  },
+  ctaArea: {
+    paddingHorizontal: 20,
+    paddingBottom: 48,
+    paddingTop: 16,
+    gap: 10,
+  },
+  ctaBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#5323e6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  ctaGradient: {
+    height: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.3,
+  },
+  skipBtn: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  skipLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#b0aec8',
+  },
+});

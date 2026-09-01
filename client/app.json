@@ -8,7 +8,8 @@
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",
-      "package": "com.anonymous.client"
+      "package": "com.anonymous.client",
+      "googleServicesFile": "./google-services.json"
     },
     "splash": {
       "image": "./src/components/images/splash.png",
@@ -20,7 +21,21 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      "expo-notifications"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cba8a595-343d-4a97-a75a-e36fe8132ea0"
+      }
+    },
+    "owner": "daksh_mrigwani",
+    "ios": {
+      "bundleIdentifier": "com.anonymous.client",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
   }
 }

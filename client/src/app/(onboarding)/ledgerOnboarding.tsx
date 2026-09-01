@@ -4,9 +4,8 @@ import {
   Text,
   SafeAreaView,
   TouchableOpacity,
-  Dimensions,
-  Image,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,350 +14,173 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
   withSpring,
   Easing,
-  interpolate,
-  Extrapolate,
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { Logger } from '../../utils/logger';
-
-const { width, height } = Dimensions.get('window');
+import { useDispatch } from 'react-redux';
+import { setMotive } from '../../store/Slices/onboardingSlice';
 
 type GoalOption = {
   id: string;
   title: string;
   description: string;
   icon: keyof typeof MaterialIcons.glyphMap;
-  iconBgColor: string;
-  iconColor: string;
-  borderColor: string;
-  gradientColors: string[];
 };
 
 const goals: GoalOption[] = [
   {
     id: 'save-more',
     title: 'Save more',
-    description: 'Build your emergency fund or plan for your next big dream.',
-    icon: 'account-balance-wallet',
-    iconBgColor: '#6c47ff',
-    iconColor: '#ffffff',
-    borderColor: '#6c47ff',
-    gradientColors: ['#6c47ff', '#5323e6'],
+    description: 'Build an emergency fund or plan for your next big goal.',
+    icon: 'savings',
   },
   {
     id: 'stop-overspending',
-    title: 'Stop overspending',
-    description: 'Identify leaks in your budget and regain control of your cash flow.',
-    icon: 'warning',
-    iconBgColor: '#cf2828',
-    iconColor: '#ffffff',
-    borderColor: '#cf2828',
-    gradientColors: ['#cf2828', '#ab0413'],
+    title: 'Cut overspending',
+    description: 'Identify leaks in your budget and regain control.',
+    icon: 'trending-down',
   },
   {
     id: 'just-track',
     title: 'Just track',
-    description: 'Visualize where your money goes without strict rules.',
-    icon: 'query-stats',
-    iconBgColor: '#006c4f',
-    iconColor: '#ffffff',
-    borderColor: '#006c4f',
-    gradientColors: ['#006c4f', '#00513b'],
+    description: 'Visualise where your money goes — no strict rules.',
+    icon: 'bar-chart',
   },
 ];
 
-export default function TheLedgerOnboarding() {
-  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
-  const [hoveredGoal, setHoveredGoal] = useState<string | null>(null);
-  
-  // Animation values
-  const fadeInAnim = useSharedValue(0);
-  const slideUpAnim = useSharedValue(30);
-  const pulseAnim = useSharedValue(0);
-  const continueButtonScale = useSharedValue(0.9);
-  const continueButtonOpacity = useSharedValue(0);
+export default function MotiveSelectionScreen() {
+  const [selected, setSelected] = useState<string | null>(null);
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  const fadeIn = useSharedValue(0);
+  const slideUp = useSharedValue(24);
+  const continueScale = useSharedValue(0.96);
+  const continueOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // Entrance animation
-    fadeInAnim.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-    });
-    slideUpAnim.value = withTiming(0, {
-      duration: 500,
-      easing: Easing.out(Easing.cubic),
-    });
-
-    // Pulse animation for wealth orbit hint
-    pulseAnim.value = withSequence(
-      withTiming(1, { duration: 1500 }),
-      withTiming(0, { duration: 1500 })
-    );
-
+    fadeIn.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) });
+    slideUp.value = withTiming(0, { duration: 480, easing: Easing.out(Easing.cubic) });
     return () => {
-      cancelAnimation(fadeInAnim);
-      cancelAnimation(slideUpAnim);
-      cancelAnimation(pulseAnim);
-      cancelAnimation(continueButtonScale);
-      cancelAnimation(continueButtonOpacity);
+      cancelAnimation(fadeIn);
+      cancelAnimation(slideUp);
     };
   }, []);
 
-  // Animate continue button when goal is selected
   useEffect(() => {
-    if (selectedGoal) {
-      continueButtonScale.value = withSpring(1, { damping: 12, stiffness: 100 });
-      continueButtonOpacity.value = withTiming(1, { duration: 300 });
+    if (selected) {
+      continueOpacity.value = withTiming(1, { duration: 250 });
+      continueScale.value = withSpring(1, { damping: 14, stiffness: 120 });
     } else {
-      continueButtonScale.value = withTiming(0.9);
-      continueButtonOpacity.value = withTiming(0);
+      continueOpacity.value = withTiming(0, { duration: 200 });
+      continueScale.value = withTiming(0.96, { duration: 200 });
     }
-  }, [selectedGoal]);
+  }, [selected]);
 
-  const handleGoalSelect = (goalId: string) => {
-    setSelectedGoal(goalId);
-    Logger.debug('Onboarding goal selected', { goalId });
-  };
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+    transform: [{ translateY: slideUp.value }],
+  }));
+
+  const continueStyle = useAnimatedStyle(() => ({
+    opacity: continueOpacity.value,
+    transform: [{ scale: continueScale.value }],
+  }));
 
   const handleContinue = () => {
-    Logger.debug('Continuing onboarding with goal', { selectedGoal });
-  router.push("/incomeSelection")
-  };
-
-  // Animated styles
-  const mainContainerStyle = useAnimatedStyle(() => ({
-    opacity: fadeInAnim.value,
-    transform: [{ translateY: slideUpAnim.value }],
-  }));
-
-  const pulseGlowStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      pulseAnim.value,
-      [0, 0.5, 1],
-      [0.8, 1.2, 0.8],
-      Extrapolate.CLAMP
-    );
-    const opacity = interpolate(
-      pulseAnim.value,
-      [0, 0.5, 1],
-      [0.3, 0.08, 0.3],
-      Extrapolate.CLAMP
-    );
-    return {
-      transform: [{ scale }],
-      opacity,
-    };
-  });
-
-  const continueButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: continueButtonScale.value }],
-    opacity: continueButtonOpacity.value,
-  }));
-
-  const renderGoalCard = (goal: GoalOption) => {
-    const isHovered = hoveredGoal === goal.id;
-    const isSelected = selectedGoal === goal.id;
-
-    return (
-      <TouchableOpacity
-        key={goal.id}
-        activeOpacity={0.9}
-        onPress={() => handleGoalSelect(goal.id)}
-        onPressIn={() => setHoveredGoal(goal.id)}
-        onPressOut={() => setHoveredGoal(null)}
-        className="relative w-full"
-      >
-        <Animated.View
-          className={`bg-white rounded-2xl p-6 border-2 ${
-            isSelected 
-              ? `border-[${goal.borderColor}]` 
-              : isHovered 
-              ? 'border-[#5323e6]/20' 
-              : 'border-transparent'
-          }`}
-          style={{
-            shadowColor: '#1a1a2e',
-            shadowOffset: { width: 0, height: isSelected ? 16 : 12 },
-            shadowOpacity: isSelected ? 0.08 : 0.04,
-            shadowRadius: isSelected ? 48 : 40,
-            elevation: isSelected ? 8 : 4,
-            backgroundColor: isSelected ? '#ffffff' : '#ffffff',
-          }}
-        >
-          {/* Background decorative icon - more prominent when selected */}
-          <View className={`absolute top-0 right-0 p-4 transition-all duration-300 ${
-            isSelected ? 'opacity-10' : 'opacity-5'
-          }`} pointerEvents="none">
-            <MaterialIcons
-              name={goal.icon}
-              size={120}
-              color={goal.borderColor}
-            />
-          </View>
-
-          {/* Title - color changes when selected */}
-          <Text className={`font-headline font-bold text-2xl mb-2 ${
-            isSelected ? `text-[${goal.borderColor}]` : 'text-[#1a1a2e]'
-          }`}>
-            {goal.title}
-          </Text>
-          
-          {/* Description */}
-          <Text className="font-body text-[#484556] text-sm leading-relaxed max-w-[200px]">
-            {goal.description}
-          </Text>
-
-          {/* Selection badge - shows when selected */}
-          {isSelected && (
-            <Animated.View className="mt-6 flex-row items-center gap-2 bg-[#5323e6]/10 px-3 py-1.5 rounded-full self-start">
-              <MaterialIcons name="check-circle" size={14} color={goal.borderColor} />
-              <Text className="text-[#5323e6] font-semibold text-xs uppercase tracking-wider">
-                Selected
-              </Text>
-            </Animated.View>
-          )}
-
-          {/* Hover indicator - shows on press */}
-          {isHovered && !isSelected && (
-            <Animated.View className="mt-6 flex-row items-center gap-2">
-              <Text className="text-[#5323e6] font-semibold text-xs uppercase tracking-wider">
-                Select Goal
-              </Text>
-              <MaterialIcons name="chevron-right" size={16} color="#5323e6" />
-            </Animated.View>
-          )}
-        </Animated.View>
-      </TouchableOpacity>
-    );
+    if (!selected) return;
+    dispatch(setMotive(selected));
+    router.push('/incomeSelection');
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#fcf8ff] pt-8">
+    <SafeAreaView style={styles.safe}>
       <StatusBar style="dark" />
 
-      {/* Top Navigation Bar */}
-      <View className="w-full bg-[#fcf8ff]/80 backdrop-blur-xl px-6 py-4 flex-row items-center">
-        <TouchableOpacity className="p-1">
-          <MaterialIcons name="arrow-back" size={24} color="#5323e6" />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <MaterialIcons name="arrow-back" size={20} color="#1a1a2e" />
         </TouchableOpacity>
-        
-        <View className="w-8" />
+
+        {/* Step dots */}
+        <View style={styles.stepRow}>
+          <View style={[styles.dot, styles.dotActive]} />
+          <View style={styles.dot} />
+          <View style={styles.dot} />
+        </View>
+
+        <Text style={styles.stepLabel}>1 of 3</Text>
       </View>
 
-      {/* Main Content with ScrollView */}
-      <ScrollView 
-        className="flex-1 px-6"
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: selectedGoal ? 100 : 32 }}
       >
-        <Animated.View style={mainContainerStyle}>
-          {/* Step Indicator */}
-          <View className="flex-row gap-2 mb-8 items-center mt-2">
-            <View className="h-1.5 w-12 rounded-full bg-[#6c47ff]" />
-            <View className="h-1.5 w-4 rounded-full bg-[#e2e0fc]" />
-            <View className="h-1.5 w-4 rounded-full bg-[#e2e0fc]" />
-            <Text className="ml-auto font-label text-[10px] font-bold uppercase tracking-[0.1em] text-[#797588]">
-              Step 1 of 3
-            </Text>
+        <Animated.View style={containerStyle}>
+          {/* Title block */}
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>What's your{'\n'}main goal?</Text>
+            <Text style={styles.subtitle}>We'll personalise your experience around it.</Text>
           </View>
 
-          {/* Editorial Header */}
-          <View className="mb-8">
-            <Text className="font-headline text-4xl font-extrabold tracking-tight text-[#1a1a2e] mb-3 leading-tight">
-              What do you want{' '}
-              <Text className="text-[#5323e6]">help</Text> with?
-            </Text>
-            <Text className="font-body text-[#484556] text-lg">
-              Choose one to get started
-            </Text>
-          </View>
-
-          {/* Goal Selection Cards */}
-          <View className="flex-col gap-5 w-full">
-            {goals.map(renderGoalCard)}
-          </View>
-
-          {/* Wealth Orbit Hint (Aura) */}
-          <View className="mt-12 mb-8 relative items-center justify-center">
-            {/* Animated glow background */}
-            <Animated.View
-              className="absolute w-64 h-64 rounded-full bg-[#5323e6]/5"
-              style={pulseGlowStyle}
-            />
-            
-            {/* Glassmorphic card */}
-            <View className="flex-row items-center gap-4 py-3 px-5 rounded-full bg-[#fcf8ff]/80 shadow-md"
-              style={{
-                shadowColor: '#1a1a2e',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.04,
-                shadowRadius: 12,
-                elevation: 3,
-              }}
-            >
-              {/* Avatar group */}
-              <View className="flex-row -space-x-3">
-                <View className="h-8 w-8 rounded-full border-2 border-[#fcf8ff] bg-gray-200 items-center justify-center overflow-hidden">
-                  <Image
-                    source={{ uri: 'https://randomuser.me/api/portraits/women/68.jpg' }}
-                    className="h-full w-full"
-                  />
-                </View>
-                <View className="h-8 w-8 rounded-full border-2 border-[#fcf8ff] bg-gray-200 items-center justify-center overflow-hidden">
-                  <Image
-                    source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-                    className="h-full w-full"
-                  />
-                </View>
-                <LinearGradient
-                  colors={['#6c47ff', '#5323e6']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="h-8 w-8 rounded-full items-center justify-center border-2 border-[#fcf8ff]"
+          {/* Goal cards */}
+          <View style={styles.cardsGap}>
+            {goals.map((goal) => {
+              const isSelected = selected === goal.id;
+              return (
+                <TouchableOpacity
+                  key={goal.id}
+                  activeOpacity={0.82}
+                  onPress={() => setSelected(goal.id)}
+                  style={[styles.card, isSelected && styles.cardSelected]}
                 >
-                  <Text className="text-white text-[10px] font-bold">12k</Text>
-                </LinearGradient>
-              </View>
-              <Text className="text-[11px] font-label font-semibold text-[#484556] uppercase tracking-wider">
-                Joined this week
-              </Text>
-            </View>
+                  {/* Icon pill */}
+                  <View style={[styles.iconPill, isSelected && styles.iconPillSelected]}>
+                    <MaterialIcons
+                      name={goal.icon}
+                      size={20}
+                      color={isSelected ? '#ffffff' : '#5323e6'}
+                    />
+                  </View>
+
+                  <View style={styles.cardText}>
+                    <Text style={[styles.cardTitle, isSelected && styles.cardTitleSelected]}>
+                      {goal.title}
+                    </Text>
+                    <Text style={styles.cardDesc}>{goal.description}</Text>
+                  </View>
+
+                  {/* Selection indicator */}
+                  <View style={[styles.radio, isSelected && styles.radioSelected]}>
+                    {isSelected && <View style={styles.radioDot} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Animated.View>
       </ScrollView>
 
-      {/* Floating Continue Button - appears when goal is selected */}
-      {selectedGoal && (
-        <Animated.View 
-          className="absolute bottom-0 left-0 right-0 px-6 pb-6 pt-4 bg-gradient-to-t from-[#fcf8ff] via-[#fcf8ff] to-transparent"
-          style={continueButtonStyle}
-        >
+      {/* Continue button */}
+      {selected && (
+        <Animated.View style={[styles.ctaWrap, continueStyle]}>
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.88}
             onPress={handleContinue}
-            className="w-full rounded-full shadow-lg overflow-hidden"
-            style={{
-              shadowColor: '#5323e6',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              elevation: 6,
-            }}
+            style={styles.ctaBtn}
           >
             <LinearGradient
               colors={['#6c47ff', '#5323e6']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              className="py-4 items-center"
+              style={styles.ctaGradient}
             >
-              <Text className="text-white font-headline font-bold text-base">
-                Continue →
-              </Text>
+              <Text style={styles.ctaLabel}>Continue</Text>
+              <MaterialIcons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 6 }} />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -366,3 +188,181 @@ export default function TheLedgerOnboarding() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#fcf8ff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 12,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e0fc',
+  },
+  stepRow: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 28,
+    height: 3,
+    borderRadius: 99,
+    backgroundColor: '#e2e0fc',
+  },
+  dotActive: {
+    backgroundColor: '#5323e6',
+  },
+  stepLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#797588',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    width: 38,
+    textAlign: 'right',
+  },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 120,
+  },
+  titleBlock: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1a1a2e',
+    letterSpacing: -1,
+    lineHeight: 38,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#797588',
+    lineHeight: 22,
+  },
+  cardsGap: {
+    gap: 12,
+  },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#e2e0fc',
+    gap: 14,
+    shadowColor: '#1a1a2e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardSelected: {
+    borderColor: '#5323e6',
+    backgroundColor: '#f5f2ff',
+    shadowColor: '#5323e6',
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  iconPill: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#f0edff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconPillSelected: {
+    backgroundColor: '#5323e6',
+  },
+  cardText: {
+    flex: 1,
+    gap: 2,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1a1a2e',
+    letterSpacing: -0.3,
+  },
+  cardTitleSelected: {
+    color: '#5323e6',
+  },
+  cardDesc: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#797588',
+    lineHeight: 17,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#d0cde8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSelected: {
+    borderColor: '#5323e6',
+    backgroundColor: '#5323e6',
+  },
+  radioDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 99,
+    backgroundColor: '#ffffff',
+  },
+  ctaWrap: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 16,
+    backgroundColor: 'rgba(252,248,255,0.96)',
+  },
+  ctaBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#5323e6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  ctaGradient: {
+    height: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.3,
+  },
+});

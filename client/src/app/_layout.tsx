@@ -6,6 +6,7 @@ import { Provider, useSelector } from "react-redux";
 import { useAppInit } from "../hooks/useAppInit";
 import { RootState, store } from "../store";
 import { ThemeProvider } from "../context/themeContext";
+import { NotificationProvider } from "../context/notificationContext";
 import { Logger } from "../utils/logger";
 import { QueryProvider } from "../providers/QueryProvider";
 
@@ -15,9 +16,11 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <ThemeProvider>
-        <QueryProvider>
-          <RootNavigator />
-        </QueryProvider>
+        <NotificationProvider>
+          <QueryProvider>
+            <RootNavigator />
+          </QueryProvider>
+        </NotificationProvider>
       </ThemeProvider>
     </Provider>
   );
@@ -48,18 +51,21 @@ useEffect(() => {
     inCommon,
   });
 
-  if (!hasOnboarded) {
-    // ↓ add !inCommon here
-    if (!inOnboarding && !inProtected && !inCommon) {
-      router.replace("/(onboarding)"); // testing bypass
+  if (token) {
+    // Authenticated user always belongs in the protected area
+    if (!inProtected && !inCommon) {
+      router.replace('/(protected)');
     }
-  } else if (!token) {
-    // ↓ add !inCommon here too (for when real auth is wired up)
+  } else if (!hasOnboarded) {
+    // New user — allow onboarding wizard and auth screens (signup/OTP)
+    if (!inOnboarding && !inAuth && !inCommon) {
+      router.replace('/(onboarding)');
+    }
+  } else {
+    // Has onboarded but no token — send to login
     if (!inAuth && !inCommon) {
       router.replace("/(auth)/login");
     }
-  } else if (token && !inProtected && !inCommon) {
-    router.replace("/(protected)");
   }
 }, [isReady, hasOnboarded, token, segments, router]);
 

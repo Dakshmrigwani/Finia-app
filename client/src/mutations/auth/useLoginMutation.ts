@@ -33,7 +33,7 @@ export function useLoginMutation() {
       dispatch(setUser(data.user));
       queryClient.setQueryData(queryKeys.auth.currentUser(), data.user);
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
-      router.replace("/");
+      router.replace("/(protected)");
     },
     onError: (error) => {
       Logger.error("Login mutation failed", error);
