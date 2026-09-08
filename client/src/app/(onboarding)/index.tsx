@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -19,10 +19,15 @@ import Animated, {
 import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
+const videoSource = require('../../components/video/onboarding.mp4');
 
 export default function OnboardingVideoSplash() {
   const router = useRouter();
-  const videoRef = useRef<any>(null);
+  const player = useVideoPlayer(videoSource, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
 
   // Staggered fade-in animations
   const wordmarkOpacity = useSharedValue(0);
@@ -76,14 +81,11 @@ export default function OnboardingVideoSplash() {
       <StatusBar style="light" />
 
       {/* Portrait video — full bleed background */}
-      <Video
-        ref={videoRef}
-        source={require('../../components/video/onboarding.mp4')}
-        style={StyleSheet.absoluteFillObject}
-        resizeMode={ResizeMode.COVER}
-        isLooping
-        isMuted
-        shouldPlay
+      <VideoView
+        player={player}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        nativeControls={false}
       />
 
       {/* Dark gradient scrim — heavier at top and bottom */}
@@ -95,7 +97,7 @@ export default function OnboardingVideoSplash() {
           'rgba(10,8,24,0.82)',
         ]}
         locations={[0, 0.22, 0.55, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
 

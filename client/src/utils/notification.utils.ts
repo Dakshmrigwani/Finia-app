@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+import type * as NotificationsType from "expo-notifications";
 
 export interface PushNotificationPayload {
   to: string;
@@ -10,21 +10,40 @@ export interface PushNotificationPayload {
   sound?: string;
 }
 
+export const isExpoGoAndroid =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient &&
+  Platform.OS === "android";
+
+let Notifications: typeof NotificationsType | null = null;
+if (!isExpoGoAndroid) {
+  try {
+    Notifications = require("expo-notifications");
+  } catch (err) {
+    console.warn("[Notifications] Failed to load expo-notifications:", err);
+  }
+}
+
+export { Notifications };
+
 // Configure default notification presentation behavior
 export function setupNotificationHandler() {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+  if (!Notifications) return;
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch (err) {
+    console.warn("[Notification Handler Error]:", err);
+  }
 }
 
 function handleRegistrationError(errorMessage: string) {
   console.warn("[Notification Registration Error]:", errorMessage);
-  throw new Error(errorMessage);
 }
 
 /**
@@ -32,13 +51,24 @@ function handleRegistrationError(errorMessage: string) {
  * Configures Android notification channel & retrieves Expo Push Token
  */
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
+  if (isExpoGoAndroid || !Notifications) {
+    console.warn(
+      "[Notifications] Android push notifications (remote notifications) were removed from Expo Go in SDK 53+. Use a development build (npx expo run:android) to test remote push notifications."
+    );
+    return undefined;
+  }
+
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
+    try {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
+      });
+    } catch (e) {
+      console.warn("[Notification Channel Error]:", e);
+    }
   }
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -49,7 +79,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
   }
   if (finalStatus !== "granted") {
     handleRegistrationError("Permission not granted to get push token for push notification!");
-    return;
+    return undefined;
   }
 
   const projectId =
@@ -57,6 +87,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 
   if (!projectId) {
     handleRegistrationError("Project ID not found in Expo configuration.");
+    return undefined;
   }
 
   try {
@@ -69,6 +100,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
     return pushTokenString;
   } catch (e: unknown) {
     handleRegistrationError(`${e}`);
+    return undefined;
   }
 }
 
@@ -103,6 +135,10 @@ export async function sendLocalNotification(
   body: string,
   data?: Record<string, any>
 ): Promise<string> {
+  if (!Notifications) {
+    console.warn("[Notifications] Local notifications not available in this environment.");
+    return "";
+  }
   return await Notifications.scheduleNotificationAsync({
     content: {
       title,

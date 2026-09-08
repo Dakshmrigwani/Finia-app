@@ -90,7 +90,7 @@ export default function FinalizeScreen() {
     try {
       await AsyncStorage.setItem('has_onboarded', 'true');
     } catch (e) {
-      Logger.warn('Could not persist hasOnboarded flag', e);
+      Logger.warn('Could not persist hasOnboarded flag', { error: e });
     }
     dispatch(resetOnboarding());
     dispatch(setHasOnboarded(true));
@@ -108,7 +108,7 @@ export default function FinalizeScreen() {
       });
     } catch (err) {
       // Non-fatal — missing data will be prompted from home screen
-      Logger.warn('Onboarding profile update failed — will retry from home', err);
+      Logger.warn('Onboarding profile update failed — will retry from home', { error: err });
     } finally {
       await markOnboarded();
     }

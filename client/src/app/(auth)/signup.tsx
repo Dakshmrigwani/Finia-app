@@ -7,6 +7,8 @@ import { spacing } from '../../utils/styles';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Logger } from '../../utils/logger';
+import { PermissionsOptionCard } from '../../components/PermissionsOptionCard';
+import { usePermissionsContext } from '../../context/permissionsContext';
 
 const AI_STEPS = [
   'Building your profile',
@@ -254,6 +256,16 @@ function SignupForm({ onSubmit }: { onSubmit: () => void }) {
     onDateChange,
   } = useSignupForm();
 
+  const { requestAll } = usePermissionsContext();
+
+  useEffect(() => {
+    // Run once on mount — triggers native OS permission dialogs
+    const timer = setTimeout(() => {
+      requestAll();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <ScrollView contentContainerStyle={{ padding: 24 }} showsVerticalScrollIndicator={false}>
       <TouchableOpacity
@@ -349,8 +361,13 @@ function SignupForm({ onSubmit }: { onSubmit: () => void }) {
           </Text>
         </TouchableOpacity>
 
+        {/* Device Permissions Card */}
+        <View className="mt-2">
+          <PermissionsOptionCard />
+        </View>
+
         {/* Submit Button */}
-        <TouchableOpacity className="mt-4 shadow-lg shadow-indigo-200" onPress={onSubmit}>
+        <TouchableOpacity className="mt-2 shadow-lg shadow-indigo-200" onPress={onSubmit}>
           <LinearGradient colors={['#6366f1', '#4f46e5']} className="h-16 rounded-2xl items-center justify-center">
             <Text className="text-white font-bold text-lg">Create Account</Text>
           </LinearGradient>

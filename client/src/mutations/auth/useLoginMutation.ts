@@ -22,7 +22,6 @@ export function useLoginMutation() {
       return login(payload);
     },
     onSuccess: async (data) => {
-      console.log("Login successful:", data);
       await SecureStore.setItemAsync(storageKeys.authToken, data.tokens.access.token);
 
       if (data.tokens.refresh.token) {
@@ -40,3 +39,4 @@ export function useLoginMutation() {
     },
   });
 }
+

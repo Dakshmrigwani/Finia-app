@@ -9,7 +9,14 @@
     "android": {
       "softwareKeyboardLayoutMode": "pan",
       "package": "com.anonymous.client",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.SEND_SMS",
+        "android.permission.READ_SMS",
+        "android.permission.RECEIVE_SMS"
+      ]
     },
     "splash": {
       "image": "./src/components/images/splash.png",
@@ -22,7 +29,16 @@
       "expo-router",
       "expo-secure-store",
       "@react-native-community/datetimepicker",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Finia needs Contacts access to let you tag friends in transactions and send payment reminders."
+        }
+      ],
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-video"
     ],
     "extra": {
       "router": {},
@@ -34,7 +50,9 @@
     "ios": {
       "bundleIdentifier": "com.anonymous.client",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSContactsUsageDescription": "Finia needs Contacts access to let you tag friends in transactions and send payment reminders.",
+        "NSSMSUsageDescription": "Finia uses SMS to send payment reminders to your contacts."
       }
     }
   }

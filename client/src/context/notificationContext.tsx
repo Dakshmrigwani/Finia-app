@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import * as Notifications from "expo-notifications";
+import type { Notification, NotificationResponse } from "expo-notifications";
 import {
+  Notifications,
   setupNotificationHandler,
   registerForPushNotificationsAsync,
   sendPushNotification,
@@ -8,13 +9,17 @@ import {
   PushNotificationPayload,
 } from "../utils/notification.utils";
 
-// Initialize notification handler settings on module import
-setupNotificationHandler();
+// Initialize notification handler settings safely on module import
+try {
+  setupNotificationHandler();
+} catch (e) {
+  console.warn("[setupNotificationHandler]", e);
+}
 
 export interface NotificationContextType {
   expoPushToken: string;
-  notification: Notifications.Notification | undefined;
-  response: Notifications.NotificationResponse | undefined;
+  notification: Notification | undefined;
+  response: NotificationResponse | undefined;
   error: string | null;
   sendNotification: (payload: Omit<PushNotificationPayload, "to"> & { to?: string }) => Promise<void>;
   triggerLocalNotification: (title: string, body: string, data?: Record<string, any>) => Promise<string>;
@@ -25,8 +30,8 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [expoPushToken, setExpoPushToken] = useState<string>("");
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
-  const [response, setResponse] = useState<Notifications.NotificationResponse | undefined>(undefined);
+  const [notification, setNotification] = useState<Notification | undefined>(undefined);
+  const [response, setResponse] = useState<NotificationResponse | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   const fetchToken = async () => {
@@ -37,6 +42,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setExpoPushToken(token);
       }
     } catch (err: any) {
+      console.warn("[Notification Token Error]:", err?.message || String(err));
       setError(err?.message || String(err));
       setExpoPushToken("");
     }
@@ -45,19 +51,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchToken();
 
-    const notificationListener = Notifications.addNotificationReceivedListener((incoming) => {
-      setNotification(incoming);
-    });
+    if (!Notifications) return;
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener((resp) => {
-      setResponse(resp);
-      console.log("[Notification Response Received]:", resp);
-    });
+    try {
+      const notificationListener = Notifications.addNotificationReceivedListener((incoming) => {
+        setNotification(incoming);
+      });
 
-    return () => {
-      notificationListener.remove();
-      responseListener.remove();
-    };
+      const responseListener = Notifications.addNotificationResponseReceivedListener((resp) => {
+        setResponse(resp);
+        console.log("[Notification Response Received]:", resp);
+      });
+
+      return () => {
+        notificationListener?.remove?.();
+        responseListener?.remove?.();
+      };
+    } catch (e) {
+      console.warn("[Notification Listener Error]:", e);
+    }
   }, []);
 
   const handleSendNotification = async (

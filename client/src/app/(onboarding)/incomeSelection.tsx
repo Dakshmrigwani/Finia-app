@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   underlineFill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#5323e6',
     borderRadius: 99,
     transformOrigin: 'left',

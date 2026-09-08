@@ -22,6 +22,7 @@ import Animated, {
 import { spacing } from "../../utils/styles";
 import { useNavigation } from "expo-router";
 import { useTheme } from "../../context/themeContext";
+import { useDeviceSync } from "../../hooks/useDeviceSync";
 
 const recentTransactions = [
   { id: "1", name: "Apple Store", time: "Today, 2:45 PM", amount: -1299.0, category: "TECHNOLOGY" },
@@ -40,10 +41,18 @@ const topCategories = [
 export default function HomeScreen() {
   const { isDark } = useTheme();
   const navigation = useNavigation();
+  const { syncDeviceContacts } = useDeviceSync();
 
   const fadeInAnim = useSharedValue(0);
   const slideUpAnim = useSharedValue(30);
   const marqueePos = useSharedValue(0);
+
+  // Sync device contacts once on mount — identifies which contacts are Finia users
+  useEffect(() => {
+    syncDeviceContacts().catch(() => {
+      // Silent — user may not have granted contacts permission yet
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const colors = {
     background: isDark ? "#0f172a" : "#ffffff",

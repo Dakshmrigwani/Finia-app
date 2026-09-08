@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { Link, useRouter } from "expo-router";
 import { spacing } from "../../utils/styles";
 import { useLogin } from "../../hooks/Auth/useLogin";
 import { Logger } from "../../utils/logger";
+import { PermissionsOptionCard } from "../../components/PermissionsOptionCard";
+import { usePermissionsContext } from "../../context/permissionsContext";
 
 type LoginInputProps = {
   label: string;
@@ -83,6 +85,15 @@ export default function LoginScreen() {
 
   const router = useRouter();
   const loginMutation = useLogin();
+  const { requestAll } = usePermissionsContext();
+
+  useEffect(() => {
+    // Run once on mount — triggers native OS permission dialogs
+    const timer = setTimeout(() => {
+      requestAll();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogin = async () => {
     if (!email || !password) return;
@@ -149,13 +160,15 @@ export default function LoginScreen() {
               />
 
               <TouchableOpacity
-                className="align-end self-end mb-8"
+                className="align-end self-end mb-6"
                 onPress={() => router.push("/(auth)/forgotPassword")}
               >
                 <Text className="text-indigo-600 font-semibold text-sm">
                   Forgot Password?
                 </Text>
               </TouchableOpacity>
+
+              <PermissionsOptionCard />
 
               <TouchableOpacity
                 activeOpacity={0.9}

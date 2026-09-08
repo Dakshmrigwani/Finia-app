@@ -7,8 +7,10 @@ import { useAppInit } from "../hooks/useAppInit";
 import { RootState, store } from "../store";
 import { ThemeProvider } from "../context/themeContext";
 import { NotificationProvider } from "../context/notificationContext";
+import { PermissionsProvider } from "../context/permissionsContext";
 import { Logger } from "../utils/logger";
 import { QueryProvider } from "../providers/QueryProvider";
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,7 +20,9 @@ export default function RootLayout() {
       <ThemeProvider>
         <NotificationProvider>
           <QueryProvider>
-            <RootNavigator />
+            <PermissionsProvider>
+              <RootNavigator />
+            </PermissionsProvider>
           </QueryProvider>
         </NotificationProvider>
       </ThemeProvider>

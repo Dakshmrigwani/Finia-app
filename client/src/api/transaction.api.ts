@@ -58,6 +58,8 @@ export const CATEGORIES_BY_TYPE: Record<TransactionType, TransactionCategory[]> 
   WEALTH_MOVEMENT: ["TRANSFER", "INVESTMENT", "WITHDRAWAL", "TOP_UP", "DIVIDEND", "OTHER"],
 };
 
+export type TransactionSource = "PDF" | "SMS" | "BANK_API" | "MANUAL";
+
 export const ALL_CATEGORIES: TransactionCategory[] = [
   "RENT", "MORTGAGE", "INSURANCE", "SUBSCRIPTION", "EMI", "SALARY",
   "UTILITIES", "INTERNET", "MOBILE_PLAN", "GYM", "STREAMING", "SIP",
@@ -79,8 +81,10 @@ export type Transaction = {
   recurrence: TransactionRecurrence;
   date: string;
   budgetId: string | null;
-  budget: { id: string; category: string } | null;
+  budget?: { id: string; category: string } | null;
   note: string | null;
+  source?: TransactionSource;
+  importFingerprint?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -103,6 +107,19 @@ export type TransactionFilters = {
   budgetId?: string;
 };
 
+export type CreateTransactionPayload = {
+  title: string;
+  description?: string | null;
+  amount: number;
+  type: TransactionType;
+  direction: TransactionDirection;
+  category: TransactionCategory;
+  date: string;
+  recurrence?: TransactionRecurrence;
+  note?: string | null;
+  budgetId?: string | null;
+};
+
 export type TransactionUpdatePayload = {
   title?: string;
   description?: string | null;
@@ -116,7 +133,21 @@ export type TransactionUpdatePayload = {
   budgetId?: string | null;
 };
 
-type PaginatedData = {
+export type PdfImportResponse = {
+  success: boolean;
+  totalExtracted: number;
+  inserted: number;
+  duplicates: number;
+  failed: number;
+};
+
+export type PdfUploadFile = {
+  uri: string;
+  name?: string;
+  type?: string;
+};
+
+export type PaginatedTransactions = {
   results: Transaction[];
   page: number;
   limit: number;
@@ -124,9 +155,12 @@ type PaginatedData = {
   totalPages: number;
 };
 
+export type PaginatedData = PaginatedTransactions;
+
 type ApiResponse<T> = {
-  status: string;
-  message: string;
+  success?: boolean;
+  status?: string;
+  message?: string;
   data: T;
 };
 
@@ -134,7 +168,7 @@ type ApiResponse<T> = {
 
 export async function getTransactions(
   filters: TransactionFilters = {}
-): Promise<PaginatedData> {
+): Promise<PaginatedTransactions> {
   const params: Record<string, string | number> = {};
   (Object.keys(filters) as (keyof TransactionFilters)[]).forEach((key) => {
     const val = filters[key];
@@ -148,9 +182,28 @@ export async function getTransactions(
     }
   });
 
-  const { data } = await apiClient.get<ApiResponse<PaginatedData>>(
+  const { data } = await apiClient.get<ApiResponse<PaginatedTransactions>>(
     "/transaction",
     { params }
+  );
+  return data.data;
+}
+
+export async function getTransactionById(
+  transactionId: string
+): Promise<Transaction> {
+  const { data } = await apiClient.get<ApiResponse<Transaction>>(
+    `/transaction/${transactionId}`
+  );
+  return data.data;
+}
+
+export async function createTransaction(
+  payload: CreateTransactionPayload
+): Promise<Transaction> {
+  const { data } = await apiClient.post<ApiResponse<Transaction>>(
+    "/transaction",
+    payload
   );
   return data.data;
 }
@@ -162,6 +215,42 @@ export async function updateTransaction(
   const { data } = await apiClient.patch<ApiResponse<Transaction>>(
     `/transaction/${id}`,
     payload
+  );
+  return data.data;
+}
+
+export async function deleteTransaction(
+  transactionId: string
+): Promise<void> {
+  await apiClient.delete(`/transaction/${transactionId}`);
+}
+
+export async function importPdfStatement(
+  file: PdfUploadFile | Blob | FormData
+): Promise<PdfImportResponse> {
+  let formData: FormData;
+  if (file instanceof FormData) {
+    formData = file;
+  } else if ("uri" in file) {
+    formData = new FormData();
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name || "statement.pdf",
+      type: file.type || "application/pdf",
+    } as any);
+  } else {
+    formData = new FormData();
+    formData.append("file", file, "statement.pdf");
+  }
+
+  const { data } = await apiClient.post<ApiResponse<PdfImportResponse>>(
+    "/transaction/import/pdf",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
   return data.data;
 }

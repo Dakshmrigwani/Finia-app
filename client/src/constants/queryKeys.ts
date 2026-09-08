@@ -22,5 +22,12 @@ export const queryKeys = {
     all: ["transaction"] as const,
     list: (filters?: object) =>
       [...queryKeys.transaction.all, "list", filters ?? {}] as const,
+    detail: (id: string) =>
+      [...queryKeys.transaction.all, "detail", id] as const,
+  },
+  contact: {
+    all: ["contact"] as const,
+    list: (filters?: object) =>
+      [...queryKeys.contact.all, "list", filters ?? {}] as const,
   },
 } as const;
