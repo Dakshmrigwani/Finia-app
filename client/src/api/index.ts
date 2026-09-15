@@ -7,3 +7,4 @@ export * from "./goal.api";
 export * from "./user.api";
 export * from "./auth.api";
 export * from "./sms.api";
+export * from "./aiAgent.api";

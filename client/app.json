@@ -7,7 +7,7 @@
       "output": "static"
     },
     "android": {
-      "softwareKeyboardLayoutMode": "pan",
+      "softwareKeyboardLayoutMode": "resize",
       "package": "com.anonymous.client",
       "googleServicesFile": "./google-services.json",
       "permissions": [
